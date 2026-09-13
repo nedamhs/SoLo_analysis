@@ -2,3 +2,7 @@
 technical_validation/.Rhistory
 technical_validation/.RData
 /technical_validation/.ipynb_checkpoints
+/.ipynb_checkpoints
+solo_dataframe.pkl
+/__pycache__
+technical_validation/combine_df.ipynb
