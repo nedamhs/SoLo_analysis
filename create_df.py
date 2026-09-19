@@ -1,11 +1,7 @@
 from pathlib import Path
 import argparse
 import pandas as pd
-
 from feature_extraction import *
-
-
-DATASET_PATH = Path("/Users/nedamohseni/Downloads/SoLo_dataset")
 
 HOUR_MS = 60 * 60 * 1000
 
@@ -19,7 +15,8 @@ FEATURE_WINDOWS_HOURS = {"calls": 12,
                          "device_usage": 12, 
                          "studentlife_audio": 12, 
                          "ambient_noise": 12, 
-                         "samsung": 24}
+                         "samsung": 24, 
+                        "oura" : 48}
 
 FEATURE_WINDOWS = {name: hours * HOUR_MS for name, hours in FEATURE_WINDOWS_HOURS.items()}
 
@@ -57,10 +54,13 @@ def load_oura(participant_dir):
     oura_dir = participant_dir / "Oura"
 
     activity_daily = pd.read_csv(oura_dir / "activity_daily.csv") if (oura_dir / "activity_daily.csv").exists() else None
+    activity_5min = pd.read_csv(oura_dir / "activity_5min.csv") if (oura_dir / "activity_5min.csv").exists() else None
+    activity_1min = pd.read_csv(oura_dir / "activity_1min.csv") if (oura_dir / "activity_1min.csv").exists() else None
     sleep_daily = pd.read_csv(oura_dir / "sleep_daily.csv") if (oura_dir / "sleep_daily.csv").exists() else None
+    sleep_5min = pd.read_csv(oura_dir / "sleep_5min.csv") if (oura_dir / "sleep_5min.csv").exists() else None
     readiness_daily = pd.read_csv(oura_dir / "readiness_daily.csv") if (oura_dir / "readiness_daily.csv").exists() else None
 
-    return activity_daily, sleep_daily, readiness_daily
+    return activity_daily, activity_5min, activity_1min, sleep_daily, sleep_5min, readiness_daily
 
 
 def create_participant_df(dataset_path, participant):
@@ -73,7 +73,7 @@ def create_participant_df(dataset_path, participant):
     # load hrv features
     hrv = load_hrv(participant_dir)
     #load oura 
-    activity_daily, sleep_daily, readiness_daily = load_oura(participant_dir)
+    activity_daily, activity_5min, activity_1min, sleep_daily, sleep_5min, readiness_daily = load_oura(participant_dir)
 
     rows = []
 
@@ -91,7 +91,7 @@ def create_participant_df(dataset_path, participant):
         mobility_features = get_mobility_features(mobility, ema_row)
 
         hrv_features = aggregate_hrv_features(hrv, ema_row, FEATURE_WINDOWS)
-        oura_features = get_oura_features(activity_daily, sleep_daily, readiness_daily, ema_row)
+        oura_features = aggregate_oura_features(activity_daily, activity_5min, activity_1min, sleep_daily, sleep_5min, readiness_daily, ema_row, FEATURE_WINDOWS)
         
 
         row = ema_row.to_dict()
@@ -128,7 +128,7 @@ def create_all_participants_df(dataset_path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset-path", type=Path, required=True)
-    parser.add_argument("--output", type=Path, default=Path("solo_dataframe.pkl"))
+    parser.add_argument("--output", type=Path, default=Path("SoLo_dataframe.pkl"))
     args = parser.parse_args()
     df = create_all_participants_df(args.dataset_path)
     df.to_pickle(args.output)

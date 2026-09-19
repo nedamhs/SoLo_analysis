@@ -183,24 +183,23 @@ def aggregate_hrv_features(hrv, datapoint, feature_windows):
 
     return features_hrv
 
-def get_oura_features(activity_daily, sleep_daily, readiness_daily, datapoint):
-    """Return Oura activity, sleep, and readiness features from the calendar day preceding the EMA."""
+def aggregate_oura_features(activity_daily, activity_5min, activity_1min, sleep_daily, sleep_5min, readiness_daily, datapoint, feature_windows):
+    """Return mean Oura features within the time window."""
 
     features_oura = {}
-    previous_date = (pd.to_datetime(datapoint["date"]) - pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    exclude_cols = ["participant", "timestamp", "date"]
 
-    exclude_cols = ["participant", "timestamp", "date", "activity_day_start", "activity_day_end", "sleep_bedtime_start", "sleep_bedtime_end", "ideal_bedtime_bedtime_window_start", "ideal_bedtime_bedtime_window_end"]
-
-    for table in [activity_daily, sleep_daily, readiness_daily]:
+    for table in [activity_daily, activity_5min, activity_1min, sleep_daily, sleep_5min, readiness_daily]:
         if table is None or table.empty:
             continue
 
         feature_cols = [col for col in table.columns if col not in exclude_cols]
-        part_table = table[table["date"] == previous_date]
+        part_table = table[(table["timestamp"] < datapoint["timestamp"]) & (table["timestamp"] > datapoint["timestamp"] - feature_windows["oura"])]
 
         if part_table.empty:
             features_oura.update({col: None for col in feature_cols})
         else:
-            features_oura.update({col: part_table.iloc[0][col] for col in feature_cols})
+            features_oura.update(part_table[feature_cols].mean().to_dict())
 
     return features_oura
+    

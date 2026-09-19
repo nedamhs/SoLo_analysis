@@ -6,3 +6,5 @@ technical_validation/.RData
 solo_dataframe.pkl
 /__pycache__
 technical_validation/combine_df.ipynb
+technical_validation/.DS_Store
+technical_validation/ML_analysis.ipynb
