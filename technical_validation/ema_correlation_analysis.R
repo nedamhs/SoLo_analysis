@@ -136,3 +136,7 @@ corrplot(
 )
 
 
+correlation_summary |>
+  select(var1, var2, r, n_participants, p_FDR, p_FDR_stars) |>
+  print(n = Inf)
+
